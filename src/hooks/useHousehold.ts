@@ -128,7 +128,10 @@ export function useHousehold() {
     setIsEditing(true);
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {}
+    } catch {
+      // Ignore localStorage errors
+    }
+
   };
 
   return {
