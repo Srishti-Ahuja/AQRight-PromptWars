@@ -1,0 +1,25 @@
+services:
+  # ---------- FastAPI Backend ----------
+  - type: web
+    name: aqr-backend
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: OPEN_METEO_API_KEY
+        value: ${OPEN_METEO_API_KEY}
+    # Render injects $PORT automatically
+
+  # ---------- React Frontend (Static Site) ----------
+  - type: static
+    name: aqr-frontend
+    env: static
+    region: oregon
+    buildCommand: "npm ci && npm run build"
+    publishPath: "dist"
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://aqr-backend.onrender.com/api/v1
