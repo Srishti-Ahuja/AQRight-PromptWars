@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import re
 import time
+import urllib.parse
 from datetime import datetime
 from typing import Dict, List, Optional
 import httpx
 
 from app.core.config import settings
+from app.core.http import get_http_client
+
 from app.models.schemas import (
     CityPresetResponse,
     CurrentTelemetry,
@@ -161,8 +165,9 @@ async def get_telemetry_data(
     )
 
     try:
-        async with httpx.AsyncClient(timeout=settings.http_timeout_seconds) as client:
-            aq_resp, weather_resp = await client.get(aq_url), await client.get(weather_url)
+        client = get_http_client()
+        aq_resp, weather_resp = await client.get(aq_url), await client.get(weather_url)
+
 
         if aq_resp.status_code != 200 or weather_resp.status_code != 200:
             raise RuntimeError(f"Open-Meteo upstream error: {aq_resp.status_code}/{weather_resp.status_code}")
@@ -337,12 +342,13 @@ def _generate_realistic_fallback(
             no2=curr_point.no2,
             co=1.8,
             o3=42.0,
-            boundaryLayerHeight=curr_point.boundaryLayerHeight,
-            windSpeed=curr_point.windSpeed,
+            boundaryLayerHeight=curr_point.boundary_layer_height,
+            windSpeed=curr_point.wind_speed,
             temperature=curr_point.temperature,
-            relativeHumidity=curr_point.relativeHumidity,
-            isTrappedSurfaceSmog=curr_point.boundaryLayerHeight < 450.0,
+            relativeHumidity=curr_point.relative_humidity,
+            isTrappedSurfaceSmog=curr_point.boundary_layer_height < 450.0,
         ),
+
         hourly=hourly_points,
         cpcb=cpcb,
         bestVentilationWindow=vent_win,
@@ -360,13 +366,17 @@ async def search_indian_cities(query: str) -> List[CityPresetResponse]:
         if q_lower in p.name.lower() or q_lower in p.city.lower() or q_lower in p.locality.lower() or q_lower in p.state.lower()
     ]
 
-    if preset_matches and len(query.strip()) < 4:
+    # Sanitize search query against control characters and injection
+    clean_query = re.sub(r"[^\w\s\-,.]", "", query.strip())
+    if not clean_query:
         return preset_matches
 
     try:
-        url = f"{settings.open_meteo_geocoding_url}?name={query.strip()}&count=6&language=en&format=json&countryCode=IN"
-        async with httpx.AsyncClient(timeout=4.0) as client:
-            resp = await client.get(url)
+        encoded_query = urllib.parse.quote(clean_query)
+        url = f"{settings.open_meteo_geocoding_url}?name={encoded_query}&count=6&language=en&format=json&countryCode=IN"
+        client = get_http_client()
+        resp = await client.get(url)
+
 
         if resp.status_code == 200:
             results = resp.json().get("results", [])

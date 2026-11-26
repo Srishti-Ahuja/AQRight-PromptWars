@@ -172,8 +172,9 @@ export function useTelemetry() {
   }, []);
 
   const refresh = () => {
-    const cacheKey = `aqright_telemetry_${selectedPreset.latitude.toFixed(4)}_${selectedPreset.longitude.toFixed(4)}`;
+    const cacheKey = `aqright_telemetry_${selectedPreset.latitude.toFixed(3)}_${selectedPreset.longitude.toFixed(3)}`;
     try {
+
       sessionStorage.removeItem(cacheKey);
     } catch {
       // Ignore sessionStorage errors

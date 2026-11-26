@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   Building2,
   Check,
@@ -15,6 +16,10 @@ export const CommunitySimulator: React.FC<CommunitySimulatorProps> = ({ telemetr
   const [householdCount, setHouseholdCount] = useState<number>(75);
   const [activeTemplate, setActiveTemplate] = useState<'english' | 'hinglish' | 'grievance'>('hinglish');
   const [copied, setCopied] = useState<boolean>(false);
+
+  const formattedTimestamp = telemetry.lastUpdated || 'Current Observation';
+
+
 
   const { cpcb, current, stationName, locality, latitude, longitude, bestVentilationWindow } = telemetry;
 
@@ -89,7 +94,8 @@ Kindly issue a formal grievance tracking token for this complaint.
 
 Respectfully submitted,
 Resident & Citizen Representative
-Timestamp: ${new Date().toLocaleString('en-IN')}`;
+Timestamp: ${formattedTimestamp}`;
+
 
   const currentText =
     activeTemplate === 'english'

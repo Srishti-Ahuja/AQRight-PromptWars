@@ -51,6 +51,8 @@ async def get_telemetry(
         raise HTTPException(status_code=500, detail=f"Failed to retrieve telemetry data: {str(exc)}")
 
 
+
+
 @router.get(
     "/presets",
     response_model=List[CityPresetResponse],

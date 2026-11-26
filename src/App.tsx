@@ -78,8 +78,18 @@ export function App() {
         lastUpdated={telemetry?.lastUpdated}
       />
 
+      {/* Accessible live status announcements for screen readers */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {telemetry ? `Active station: ${selectedPreset.name}. Current NAQI is ${telemetry.cpcb.aqi}, ${telemetry.cpcb.category}.` : 'Loading air quality data.'}
+      </div>
+
       {/* Main Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
         {/* Loading Spinner */}
         {loading && !telemetry && (
           <div className="flex flex-col items-center justify-center py-24 space-y-3">

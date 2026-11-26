@@ -7,17 +7,34 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from app.api.routes import router as api_router
 from app.core.config import settings
+from app.core.http import close_http_client
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Applies strict HTTP security headers to protect against framing, sniffing, and XSS."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response: Response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(self), microphone=()"
+        return response
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Manages application startup and shutdown lifecycle events."""
-    # Startup initialization
     yield
-    # Clean shutdown
+    # Gracefully shut down HTTP connection pool on exit
+    await close_http_client()
 
 
 app = FastAPI(
@@ -33,12 +50,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Apply Security Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Cross-Origin Resource Sharing (CORS) Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permits frontend dev servers on any local port
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 

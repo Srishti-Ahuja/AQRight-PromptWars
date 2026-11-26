@@ -27,6 +27,8 @@ export const XaiDrawer: React.FC<XaiDrawerProps> = ({
   useEffect(() => {
     if (!recommendation) return;
 
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
     // Focus close button on open
     setTimeout(() => {
       closeButtonRef.current?.focus();
@@ -57,8 +59,12 @@ export const XaiDrawer: React.FC<XaiDrawerProps> = ({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
   }, [recommendation, onClose]);
+
 
   if (!recommendation) return null;
 
