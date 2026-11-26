@@ -26,8 +26,8 @@ COPY app/ ./app/
 COPY app/__init__.py ./
 
 # Expose the port FastAPI will run on (Render provides $PORT)
-ENV PORT=8000
 EXPOSE 8000
 
-# Run with Uvicorn – respect the $PORT injected by Render
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
+# Use a shell form command so that ${PORT:-8000} is expanded at container start‑up.
+# Render injects the PORT env var; the default of 8000 is used when it is not set.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
