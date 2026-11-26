@@ -25,12 +25,16 @@ export function App() {
     refresh,
     selectedPreset,
     selectPreset,
+    geolocate,
+    isGeolocating,
+    geoError,
     searchQuery,
     setSearchQuery,
     searchResults,
     isSearching,
     presets,
   } = useTelemetry();
+
 
   const {
     household,
@@ -66,6 +70,9 @@ export function App() {
         onSearchChange={setSearchQuery}
         searchResults={searchResults}
         isSearching={isSearching}
+        onGeolocate={geolocate}
+        isGeolocating={isGeolocating}
+        geoError={geoError}
         onRefresh={refresh}
         isLoading={loading}
         lastUpdated={telemetry?.lastUpdated}

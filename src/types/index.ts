@@ -179,4 +179,7 @@ export interface CityPreset {
   latitude: number;
   longitude: number;
   monitoringAgency: string;
+  /** true = curated CPCB/known preset; false/undefined = live geocoded location */
+  isPreset?: boolean;
 }
+
