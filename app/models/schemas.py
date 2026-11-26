@@ -316,3 +316,126 @@ class CityPresetResponse(BaseModel):
     latitude: float
     longitude: float
     monitoring_agency: str = Field(alias="monitoringAgency")
+
+
+# ---------------------------------------------------------------------------
+# Source Attribution Breakdown Models
+# ---------------------------------------------------------------------------
+
+class SourceDriverType(str, Enum):
+    """Categorization of urban atmospheric pollution sources."""
+    BIOMASS_INVERSION = "biomass_inversion"
+    SURFACE_ROAD_DUST = "surface_road_dust"
+    VEHICULAR_EXHAUST = "vehicular_exhaust"
+    PHOTOCHEMICAL_SMOG = "photochemical_smog"
+
+
+class SourceDriverMetric(BaseModel):
+    """Individual atmospheric emission driver with quantitative attribution."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    driver_type: SourceDriverType = Field(alias="driverType")
+    label: str
+    contribution_percent: float = Field(alias="contributionPercent", ge=0.0, le=100.0)
+    severity: str  # "high", "moderate", "low"
+    rationale: str
+    metrics_snapshot: str = Field(alias="metricsSnapshot")
+    icon_name: str = Field(alias="iconName")
+
+
+class MeteorologicalContext(BaseModel):
+    """Atmospheric dispersion and mixing layer indicators."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    mixing_layer_m: float = Field(alias="mixingLayerM")
+    is_inversion_trapped: bool = Field(alias="isInversionTrapped")
+    wind_speed_kmh: float = Field(alias="windSpeedKmh")
+    wind_cardinal: str = Field(alias="windCardinal")
+    temperature_c: float = Field(alias="temperatureC")
+    humidity_percent: float = Field(alias="humidityPercent")
+    pm25_to_pm10_ratio: float = Field(alias="pm25ToPm10Ratio")
+
+
+class SourceAttributionReport(BaseModel):
+    """Comprehensive diagnostic breakdown explaining why AQI is elevated."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    station_name: str = Field(alias="stationName")
+    aqi: int
+    category: str
+    dominant_driver: SourceDriverType = Field(alias="dominantDriver")
+    causal_summary: str = Field(alias="causalSummary")
+    drivers: List[SourceDriverMetric]
+    meteorology: MeteorologicalContext
+    action_implication: str = Field(alias="actionImplication")
+
+
+# ---------------------------------------------------------------------------
+# Dynamic Clean-Route Commute Comparator Models
+# ---------------------------------------------------------------------------
+
+class CommuteTravelMode(str, Enum):
+    """Travel transit mode for commute exposure simulation."""
+    DRIVING = "driving"
+    CYCLING = "cycling"
+    WALKING = "walking"
+
+
+class RouteCompareRequest(BaseModel):
+    """Validated user payload to trigger dynamic clean route comparison."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    source: str = Field(..., min_length=2, max_length=120)
+    destination: str = Field(..., min_length=2, max_length=120)
+    travel_mode: CommuteTravelMode = Field(default=CommuteTravelMode.DRIVING, alias="travelMode")
+    member_id: Optional[str] = Field(default=None, alias="memberId")
+    household: Optional[HouseholdProfileInput] = None
+
+
+class RouteWaypoint(BaseModel):
+    """Sampled geographic point along a road route with live ambient AQI."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    lat: float
+    lon: float
+    order: int
+    pm25: float
+    pm10: float
+    no2: float
+    aqi: int
+    category: str
+
+
+class RouteOptionMetrics(BaseModel):
+    """Aggregated navigational and environmental air quality metrics for a single route."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    route_id: str = Field(alias="routeId")
+    label: str
+    distance_km: float = Field(alias="distanceKm")
+    duration_min: float = Field(alias="durationMin")
+    mean_aqi: int = Field(alias="meanAqi")
+    peak_aqi: int = Field(alias="peakAqi")
+    mean_pm25: float = Field(alias="meanPm25")
+    peak_pm25: float = Field(alias="peakPm25")
+    mean_no2: float = Field(alias="meanNo2")
+    estimated_dose_ug: float = Field(alias="estimatedDoseUg")
+    geometry_geojson: dict = Field(alias="geometryGeojson")
+    waypoints: List[RouteWaypoint]
+
+
+class RouteComparisonResponse(BaseModel):
+    """Envelope comparing multiple routes with AQI differential and commuter exposure savings."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    source_resolved: str = Field(alias="sourceResolved")
+    destination_resolved: str = Field(alias="destinationResolved")
+    travel_mode: CommuteTravelMode = Field(alias="travelMode")
+    routes: List[RouteOptionMetrics]
+    cleanest_route_index: int = Field(alias="cleanestRouteIndex")
+    aqi_difference_points: int = Field(alias="aqiDifferencePoints")
+    exposure_savings_percent: float = Field(alias="exposureSavingsPercent")
+    inhaled_pm25_avoided_ug: float = Field(alias="inhaledPm25AvoidedUg")
+    comparison_summary: str = Field(alias="comparisonSummary")
+    commuter_target_name: Optional[str] = Field(default=None, alias="commuterTargetName")
+

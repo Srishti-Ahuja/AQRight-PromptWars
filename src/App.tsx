@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -10,12 +10,23 @@ import { useTelemetry } from './hooks/useTelemetry';
 import { generateXAIRecommendations } from './lib/xai-engine';
 import { Navbar } from './components/Navbar';
 import { TelemetryBanner } from './components/TelemetryBanner';
+import { SourceAttributionCard } from './components/SourceAttributionCard';
 import { VentilationChart } from './components/VentilationChart';
 import { HouseholdMatrix } from './components/HouseholdMatrix';
 import { ActionFeed } from './components/ActionFeed';
-import { XaiDrawer } from './components/XaiDrawer';
-import { CommunitySimulator } from './components/CommunitySimulator';
 import type { XAIRecommendation } from './types';
+
+const CommuteComparator = lazy(() =>
+  import('./components/CommuteComparator').then((m) => ({ default: m.CommuteComparator }))
+);
+const CommunitySimulator = lazy(() =>
+  import('./components/CommunitySimulator').then((m) => ({ default: m.CommunitySimulator }))
+);
+const XaiDrawer = lazy(() =>
+  import('./components/XaiDrawer').then((m) => ({ default: m.XaiDrawer }))
+);
+
+
 
 export function App() {
   const {
@@ -122,6 +133,17 @@ export function App() {
             {/* Live Indian Telemetry Banner */}
             <TelemetryBanner telemetry={telemetry} />
 
+            {/* Feature 1: Source Attribution Breakdown ('Why is AQI High Today?') */}
+            <SourceAttributionCard
+              telemetry={telemetry}
+              onInspectDriver={() => {
+                if (recommendations.length > 0) {
+                  setSelectedRecommendation(recommendations[0]);
+                }
+              }}
+            />
+
+
             {/* 24-Hour Clean Ventilation Window Chart */}
             <VentilationChart telemetry={telemetry} />
 
@@ -141,6 +163,14 @@ export function App() {
               onRemoveMember={removeMember}
             />
 
+            {/* Feature 2: Dynamic Clean-Route Commute Comparator (Input-Gated) */}
+            <Suspense fallback={<div className="h-28 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] flex items-center justify-center text-xs text-[var(--text-muted)]">Loading commute comparator...</div>}>
+              <CommuteComparator
+                household={household}
+                currentStationName={selectedPreset.name}
+              />
+            </Suspense>
+
             {/* Display Submissions & Personalized Modules ONLY after form is filled */}
             {household.isSubmitted ? (
               <>
@@ -152,9 +182,12 @@ export function App() {
                 />
 
                 {/* RWA Community Ripple Simulator & Civic Circular Generator */}
-                <CommunitySimulator telemetry={telemetry} />
+                <Suspense fallback={<div className="h-24 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] flex items-center justify-center text-xs text-[var(--text-muted)]">Loading civic simulator...</div>}>
+                  <CommunitySimulator telemetry={telemetry} />
+                </Suspense>
               </>
             ) : (
+
               /* Helpful Prompt Banner when form is not yet submitted */
               <div className="rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-card)] p-8 text-center space-y-3">
                 <div className="w-12 h-12 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto">
@@ -179,10 +212,12 @@ export function App() {
       </main>
 
       {/* XAI Decision Inspector Drawer */}
-      <XaiDrawer
-        recommendation={selectedRecommendation}
-        onClose={() => setSelectedRecommendation(null)}
-      />
+      <Suspense fallback={null}>
+        <XaiDrawer
+          recommendation={selectedRecommendation}
+          onClose={() => setSelectedRecommendation(null)}
+        />
+      </Suspense>
 
       {/* Accessible Footer */}
       <footer className="w-full border-t border-[var(--border-subtle)] bg-[var(--surface-card)] py-6 mt-12 text-xs text-[var(--text-muted)]">

@@ -183,3 +183,101 @@ export interface CityPreset {
   isPreset?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Source Attribution Breakdown Types
+// ---------------------------------------------------------------------------
+
+export type SourceDriverType =
+  | 'biomass_inversion'
+  | 'surface_road_dust'
+  | 'vehicular_exhaust'
+  | 'photochemical_smog';
+
+export interface SourceDriverMetric {
+  driverType: SourceDriverType;
+  label: string;
+  contributionPercent: number;
+  severity: 'high' | 'moderate' | 'low';
+  rationale: string;
+  metricsSnapshot: string;
+  iconName: string;
+}
+
+export interface MeteorologicalContext {
+  mixingLayerM: number;
+  isInversionTrapped: boolean;
+  windSpeedKmh: number;
+  windCardinal: string;
+  temperatureC: number;
+  humidityPercent: number;
+  pm25ToPm10Ratio: number;
+}
+
+export interface SourceAttributionReport {
+  stationName: string;
+  aqi: number;
+  category: string;
+  dominantDriver: SourceDriverType;
+  causalSummary: string;
+  drivers: SourceDriverMetric[];
+  meteorology: MeteorologicalContext;
+  actionImplication: string;
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic Clean-Route Commute Comparator Types
+// ---------------------------------------------------------------------------
+
+export type CommuteTravelMode = 'driving' | 'cycling' | 'walking';
+
+export interface RouteCompareRequest {
+  source: string;
+  destination: string;
+  travelMode: CommuteTravelMode;
+  memberId?: string;
+  household?: HouseholdProfile;
+}
+
+export interface RouteWaypoint {
+  lat: number;
+  lon: number;
+  order: number;
+  pm25: number;
+  pm10: number;
+  no2: number;
+  aqi: number;
+  category: string;
+}
+
+export interface RouteOptionMetrics {
+  routeId: string;
+  label: string;
+  distanceKm: number;
+  durationMin: number;
+  meanAqi: number;
+  peakAqi: number;
+  meanPm25: number;
+  peakPm25: number;
+  meanNo2: number;
+  estimatedDoseUg: number;
+  geometryGeojson: {
+    type: string;
+    coordinates: [number, number][];
+  };
+  waypoints: RouteWaypoint[];
+}
+
+export interface RouteComparisonResponse {
+  sourceResolved: string;
+  destinationResolved: string;
+  travelMode: CommuteTravelMode;
+  routes: RouteOptionMetrics[];
+  cleanestRouteIndex: number;
+  aqiDifferencePoints: number;
+  exposureSavingsPercent: number;
+  inhaledPm25AvoidedUg: number;
+  comparisonSummary: string;
+  commuterTargetName?: string;
+}
+
+

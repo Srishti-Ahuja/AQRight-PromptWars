@@ -19,31 +19,58 @@ export function useTelemetry() {
   const [isGeolocating, setIsGeolocating] = useState<boolean>(false);
   const [geoError, setGeoError] = useState<string | null>(null);
 
-  const loadTelemetry = useCallback(async (preset: CityPreset) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchTelemetry({
-        lat: preset.latitude,
-        lon: preset.longitude,
-        name: preset.name,
-        locality: preset.locality,
-        city: preset.city,
-        state: preset.state,
-      });
-      setTelemetry(data);
-    } catch (err: unknown) {
-      console.error('Error fetching telemetry:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch telemetry');
-    } finally {
-      setLoading(false);
-    }
+  const loadTelemetry = useCallback((preset: CityPreset) => {
+    let cancelled = false;
+    queueMicrotask(async () => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchTelemetry({
+          lat: preset.latitude,
+          lon: preset.longitude,
+          name: preset.name,
+          locality: preset.locality,
+          city: preset.city,
+          state: preset.state,
+        });
+        if (!cancelled) {
+          setTelemetry(data);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          console.error('Error fetching telemetry:', err);
+          setError(err instanceof Error ? err.message : 'Failed to fetch telemetry');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Fetch telemetry whenever selected preset changes
   useEffect(() => {
-    loadTelemetry(selectedPreset);
+    const cancel = loadTelemetry(selectedPreset);
+    return () => {
+      if (cancel) cancel();
+    };
   }, [selectedPreset, loadTelemetry]);
+
+  const handleSetSearchQuery = useCallback((q: string) => {
+    setSearchQuery(q);
+    if (!q.trim() || q.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+    } else {
+      setIsSearching(true);
+    }
+  }, []);
 
   // Handle debounced search query (350ms)
   useEffect(() => {
@@ -51,16 +78,15 @@ export function useTelemetry() {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      setIsSearching(false);
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
       return;
     }
 
-    setIsSearching(true);
     searchTimeoutRef.current = window.setTimeout(async () => {
+      setIsSearching(true);
       try {
-        const results = await searchIndianCities(searchQuery);
+        const results = await searchIndianCities(trimmed);
         setSearchResults(results);
       } catch (e) {
         console.warn('Search error:', e);
@@ -195,7 +221,7 @@ export function useTelemetry() {
     isGeolocating,
     geoError,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: handleSetSearchQuery,
     searchResults,
     isSearching,
     presets: INDIAN_STATION_PRESETS,

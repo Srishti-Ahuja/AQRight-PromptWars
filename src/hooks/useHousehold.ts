@@ -30,13 +30,6 @@ export function useHousehold() {
   // Track if user is currently in editing mode
   const [isEditing, setIsEditing] = useState<boolean>(() => !household.isSubmitted);
 
-  // Sync isEditing when submission status changes
-  useEffect(() => {
-    if (!household.isSubmitted) {
-      setIsEditing(true);
-    }
-  }, [household.isSubmitted]);
-
   // Save to localStorage whenever submitted
   useEffect(() => {
     try {

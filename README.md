@@ -31,26 +31,34 @@
 ```
 AQRight-PromptWars/
 ├── app/                        # Python FastAPI Backend Layer
-│   ├── main.py                 # FastAPI application, CORS, lifespan, exception handlers
+│   ├── main.py                 # FastAPI application, CORS, SecurityHeadersMiddleware, lifespan
 │   ├── core/
-│   │   └── config.py           # Pydantic Settings, TTL configs, Open-Meteo URLs
+│   │   ├── config.py           # Pydantic Settings, TTL configs, Open-Meteo & OSRM URLs
+│   │   └── http.py             # Reusable pooled httpx.AsyncClient singleton
 │   ├── models/
-│   │   └── schemas.py          # Strict Pydantic v2 models (Household, Telemetry, XAI)
+│   │   └── schemas.py          # Strict Pydantic v2 models (Household, Telemetry, XAI, Source Attribution, Commute)
 │   ├── services/
 │   │   ├── aqi_math.py         # Official CPCB NAQI breakpoints, GRAP stages, inhalation dose
 │   │   ├── telemetry.py        # Async httpx client with 15-min TTL cache & Open-Meteo mesh
-│   │   └── xai_engine.py       # Deterministic SHAP attribution & counterfactual exposure model
+│   │   ├── xai_engine.py       # Deterministic SHAP attribution & counterfactual exposure model
+│   │   ├── source_attribution.py # Live multi-pollutant diagnostic & atmospheric driver breakdown
+│   │   └── commute_router.py   # Input-gated OSRM routing with live waypoint AQI sampling
 │   └── api/
-│       └── routes.py           # Endpoints: /telemetry, /recommendations/xai, /cities/search, /presets
-├── tests/                      # Python pytest suite
+│       └── routes.py           # Endpoints: /telemetry, /telemetry/attribution, /commute/compare, /recommendations/xai, /cities/search, /presets
+├── tests/                      # Python pytest suite (273 tests)
 │   ├── test_aqi_math.py        # CPCB sub-index breakpoints, GRAP stages, Berkeley cigarettes
-│   └── test_api.py             # FastAPI route integration tests
+│   ├── test_api.py             # FastAPI route integration tests
+│   ├── test_xai_engine.py      # Recommendation engine & SHAP weights integrity tests
+│   ├── test_source_attribution.py # Ratio diagnostics & driver percentage tests
+│   └── test_commute_router.py  # Input-gating, waypoint sampling & exposure savings tests
 ├── src/                        # React 18+ TypeScript Frontend
 │   ├── components/
 │   │   ├── Navbar.tsx          # Live telemetry indicator, theme toggle, station search
 │   │   ├── TelemetryBanner.tsx # CPCB NAQI gauge, CAQM GRAP stage, pollutant breakdown
+│   │   ├── SourceAttributionCard.tsx # "Why is AQI High Today?" driver bars & meteorology
 │   │   ├── VentilationChart.tsx# 24-Hour dual-axis SVG: PM2.5 vs Boundary Layer Mixing Height
 │   │   ├── HouseholdMatrix.tsx # Floor elevation, kitchen exhaust, triggers & dynamic family manager
+│   │   ├── CommuteComparator.tsx# Dynamic clean-route comparator with waypoint AQI
 │   │   ├── ActionFeed.tsx      # Categorized recommendation cards with impact pills & XAI trigger
 │   │   ├── XaiDrawer.tsx       # Focus-trapped slide-over drawer with SHAP bars & counterfactuals
 │   │   └── CommunitySimulator.tsx# RWA Society Ripple slider & 1-click WhatsApp/SAMEER circulars
@@ -58,6 +66,11 @@ AQRight-PromptWars/
 │   │   ├── useTelemetry.ts     # Telemetry hook connecting to API with 15-min sessionStorage cache
 │   │   └── useHousehold.ts     # Schema-versioned localStorage manager for family profiles
 │   ├── lib/
+│   │   ├── aqi-math.ts         # Pure TypeScript CPCB equations and dose models
+│   │   ├── source-attribution.ts # Client-side diagnostic engine for immediate response
+│   │   ├── commute-api.ts      # Client API for clean route comparison
+│   │   ├── xai-engine.ts       # Client-side XAI engine mirroring backend
+
 │   │   ├── constants.ts        # Curated CPCB presets & default Indian family profile
 │   │   ├── aqi-math.ts         # Pure TypeScript NAQI calculations
 │   │   ├── xai-engine.ts       # Zero-latency instant client-side XAI engine

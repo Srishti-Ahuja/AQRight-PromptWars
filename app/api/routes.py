@@ -11,8 +11,13 @@ from app.models.schemas import (
     RecommendationPriority,
     RecommendationRequest,
     RecommendationResponse,
+    RouteCompareRequest,
+    RouteComparisonResponse,
+    SourceAttributionReport,
     TelemetryResponse,
 )
+from app.services.commute_router import compare_commute_routes
+from app.services.source_attribution import compute_source_attribution
 from app.services.telemetry import (
     INDIAN_STATION_PRESETS,
     get_telemetry_data,
@@ -21,6 +26,7 @@ from app.services.telemetry import (
 from app.services.xai_engine import generate_xai_recommendations
 
 router = APIRouter()
+
 
 
 @router.get(
@@ -100,3 +106,41 @@ async def compute_recommendations(
         criticalActions=critical_count,
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
+
+
+@router.get(
+    "/telemetry/attribution",
+    response_model=SourceAttributionReport,
+    summary="Get source attribution breakdown for current telemetry",
+    description="Diagnoses primary pollution mechanisms (inversion, road dust, vehicular, photochemical) from multi-pollutant ratios.",
+)
+async def get_source_attribution(
+    lat: float = Query(28.6469, description="Latitude coordinate", ge=-90.0, le=90.0),
+    lon: float = Query(77.3160, description="Longitude coordinate", ge=-180.0, le=180.0),
+    wind_deg: float = Query(315.0, description="Wind direction azimuth degrees", ge=0.0, le=360.0),
+) -> SourceAttributionReport:
+    """Endpoint calculating deterministic multi-pollutant source attribution."""
+    try:
+        telemetry = await get_telemetry_data(lat=lat, lon=lon)
+        return compute_source_attribution(telemetry=telemetry, wind_direction_deg=wind_deg)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Source attribution calculation failed: {str(exc)}")
+
+
+@router.post(
+    "/commute/compare",
+    response_model=RouteComparisonResponse,
+    summary="Dynamic Clean-Route Commute Comparator",
+    description="Compares real OSRM road routes between Source and Destination with sampled live waypoint AQI and personal exposure deltas.",
+)
+async def compare_routes(
+    payload: RouteCompareRequest,
+) -> RouteComparisonResponse:
+    """Endpoint comparing road routes with live waypoint air quality metrics."""
+    try:
+        return await compare_commute_routes(payload)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Route comparison failed: {str(exc)}")
+

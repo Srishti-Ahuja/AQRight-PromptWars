@@ -14,6 +14,7 @@ from starlette.responses import Response
 from app.api.routes import router as api_router
 from app.core.config import settings
 from app.core.http import close_http_client
+from app.core.rate_limit import RateLimitMiddleware
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -26,6 +27,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(self), microphone=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "connect-src 'self' https://*.open-meteo.com https://nominatim.openstreetmap.org https://router.project-osrm.org; "
+            "img-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline'"
+        )
         return response
 
 
@@ -50,13 +58,16 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Apply Rate Limiting Middleware
+app.add_middleware(RateLimitMiddleware)
+
 # Apply Security Headers Middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Cross-Origin Resource Sharing (CORS) Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins if not settings.debug else ["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -93,9 +104,12 @@ async def root() -> JSONResponse:
                 "presets": f"{settings.api_prefix}/presets",
                 "search": f"{settings.api_prefix}/cities/search",
                 "xai_recommendations": f"{settings.api_prefix}/recommendations/xai",
+                "source_attribution": f"{settings.api_prefix}/telemetry/attribution",
+                "commute_compare": f"{settings.api_prefix}/commute/compare",
             },
         },
     )
+
 
 
 if __name__ == "__main__":

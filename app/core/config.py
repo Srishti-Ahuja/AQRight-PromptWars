@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     open_meteo_aq_url: str = "https://air-quality-api.open-meteo.com/v1/air-quality"
     open_meteo_weather_url: str = "https://api.open-meteo.com/v1/forecast"
     open_meteo_geocoding_url: str = "https://geocoding-api.open-meteo.com/v1/search"
+    osrm_router_url: str = "https://router.project-osrm.org/route/v1"
+    nominatim_url: str = "https://nominatim.openstreetmap.org/search"
+
 
 
 settings = Settings()
