@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AQRight — Explainable AI Smog & Urban Air Quality Assistant for Indian Households</title>
+    <meta name="description" content="Hyper-personalized explainable AI air quality assistant computing live CPCB telemetry, inversion layer physics, and household vulnerability metrics." />
+    <!-- Zero-Flash Theme Hydration Script -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('aqright-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--bg-primary)] text-[var(--text-primary)] min-h-screen antialiased selection:bg-teal-500 selection:text-white transition-colors duration-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
