@@ -27,6 +27,23 @@
 ---
 
 ## 2. System Architecture
+The **Personalized Action Feed** generates a stream of recommendation cards tailored to each household member’s profile, current telemetry, and contextual triggers (e.g., cooking events, commute mode). Each card includes an **XAI Decision** button that opens the XAI Decision Inspector Drawer, showing SHAP‑based feature attributions, confidence scores, and counterfactual scenarios. This design ties the backend XAI engine (`xai_engine.py` / `src/lib/xai-engine.ts`) to the frontend `ActionFeed` component, ensuring every recommendation is explainable and actionable.
+
+```mermaid
+graph TD
+  A[Telemetry & Household Data] --> B[Personalized Action Feed]
+  B --> C[Recommendation Card]
+  C --> D[XAI Decision Button]
+  D --> E[XAI Decision Inspector Drawer]
+  E --> F[SHAP Attributions & Counterfactuals]
+  F --> G[User Insight]
+  style A fill:#f9f,stroke:#333,stroke-width:2px
+  style B fill:#bbf,stroke:#333,stroke-width:2px
+  style C fill:#bfb,stroke:#333,stroke-width:2px
+  style D fill:#fbf,stroke:#333,stroke-width:2px
+  style E fill:#ff9,stroke:#333,stroke-width:2px
+  style F fill:#9ff,stroke:#333,stroke-width:2px
+```
 
 ```
 AQRight-PromptWars/
@@ -299,4 +316,4 @@ AQRight includes quick-select presets for major high-density Indian CPCB continu
 
 ## 8. License & Civic Use
 
-AQRight is open-source under the MIT License. Developed for Indian public health advocacy, Resident Welfare Associations (RWAs), and citizen science.
+AQRight is open-source. Developed for Indian public health advocacy, Resident Welfare Associations (RWAs), and citizen science.
